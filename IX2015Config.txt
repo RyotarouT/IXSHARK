@@ -1,0 +1,151 @@
+! NEC Portable Internetwork Core Operating System Software
+! IX Series IX2105 (magellan-sec) Software, Version 9.3.11, RELEASE SOFTWARE
+! Compiled Mar 09-Wed-2016 11:29:26 JST #2
+! Last updated Aug 22-Mon-2022 00:25:46 JST
+!
+!
+hostname IXsHarK
+timezone +09 00
+!
+!
+!
+username caren password hash 54D474FAFA42B49CEA administrator
+!
+!
+!
+ntp ip enable
+ntp server 210.173.160.87
+ntp server 133.243.238.164
+ntp retry 10
+ntp interval 3600
+!
+!
+!
+logging buffered 13107
+logging subsystem all warn
+logging timestamp datetime
+!
+ids ip type ip-header action detect
+ids ip type ip-option action detect
+ids ip type icmp action detect
+ids ip type tcp action discard
+ids logging-interval 10
+!
+!
+ip ufs-cache enable
+ip route default GigaEthernet0.1
+ip dhcp enable
+ip access-list http-acces permit ip src 192.168.1.0/24 dest 192.168.1.0/24
+ip access-list http-acces permit ip src 192.128.0.0/10 dest 192.128.0.0/10
+ip access-list ipsec-map permit ip src any dest any
+ip access-list web-f-w1-s1 deny ip src any dest 0.0.0.0/8
+ip access-list web-f-w1-s1 deny ip src any dest 10.0.0.0/8
+ip access-list web-f-w1-s1 deny ip src any dest 127.0.0.0/8
+ip access-list web-f-w1-s1 deny ip src any dest 169.254.0.0/16
+ip access-list web-f-w1-s1 deny ip src any dest 172.16.0.0/12
+ip access-list web-f-w1-s1 deny ip src any dest 192.168.0.0/16
+ip access-list web-f-w1-s1 deny ip src any dest 224.0.0.0/4
+ip access-list web-f-w1-s1 deny ip src any dest 240.0.0.0/4
+ip access-list web-f-w1-s1 deny tcp src any sport eq 135 dest any dport any
+ip access-list web-f-w1-s1 deny tcp src any sport any dest any dport eq 135
+ip access-list web-f-w1-s1 deny tcp src any sport range 137 139 dest any dport any
+ip access-list web-f-w1-s1 deny tcp src any sport any dest any dport range 137 139
+ip access-list web-f-w1-s1 deny tcp src any sport eq 445 dest any dport any
+ip access-list web-f-w1-s1 deny tcp src any sport any dest any dport eq 445
+ip access-list web-f-w1-s1 permit ip src any dest any
+!
+arp max-neighbors 2000
+arp auto-refresh
+!
+!
+!
+snmp-agent ip community snmpcom http-acces
+snmp-agent ip host 192.168.55.2 snmpcom version 1
+snmp-agent ip host 192.168.55.5 snmpcom version 1
+snmp-agent ip trap-source GigaEthernet1.0
+snmp-agent contact same
+snmp-agent location home
+!
+!
+!
+!
+!
+!
+dns cache enable
+dns cache max-records 255
+dns cache lifetime 300
+dns ncache lifetime 60
+!
+proxy-dns ip enable
+proxy-dns ip max-sessions 127
+proxy-dns ip query-retries 3
+proxy-dns ip query-interval 3
+!
+!
+http-server username caren
+http-server ip access-list http-acces
+http-server ip enable
+!
+web-console interface wan1 GigaEthernet0.1
+!
+!
+!
+!
+!
+!
+!
+!
+ppp profile web-ppp-gigaethernet0.1
+  authentication myname ra1210932@ma.open-circuit.ne.jp
+  authentication password ra1210932@ma.open-circuit.ne.jp x2ehB6LP6Q
+!
+ip dhcp profile lan-set1
+  assignable-range 192.168.55.1 192.168.55.55
+  default-gateway 192.168.55.254
+!
+ip dhcp profile web-dhcp-gigaethernet1.0
+!
+device GigaEthernet0
+!
+device GigaEthernet1
+  vlan-group 1 port 1 2
+!
+interface GigaEthernet0.0
+  no ip address
+  shutdown
+!
+interface GigaEthernet1.0
+  no ip address
+  ip dhcp binding web-dhcp-gigaethernet1.0
+  shutdown
+!
+interface GigaEthernet0.1
+  description opencercit
+  encapsulation pppoe
+  auto-connect
+  ppp binding web-ppp-gigaethernet0.1
+  ip address ipcp
+  ip mtu 1454
+  ip tcp adjust-mss auto
+  ip napt enable
+  ip filter web-f-w1-s1 100 out
+  no shutdown
+!
+interface GigaEthernet1:1.0
+  ip address 192.168.55.254/24
+  ip dhcp binding lan-set1
+  no shutdown
+!
+interface Loopback0.0
+  no ip address
+!
+interface Null0.0
+  no ip address
+!
+interface Tunnel0.0
+  tunnel mode l2tp ipsec
+  no ip address
+  ip mtu 1454
+  ip tcp adjust-mss auto
+  ipsec policy transport ipsec-map
+  no shutdown
